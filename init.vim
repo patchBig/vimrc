@@ -44,7 +44,7 @@ cnoremap <M-b> <S-Left>
 cnoremap <M-w> <S-Right>
 
 " ==================== Basic Mappings ====================
-
+noremap ; :
 
 noremap <LEADER><CR> :nohlsearch<CR>
 
@@ -157,6 +157,17 @@ Plug 'nvim-pack/nvim-spectre'
 " nerdtree'
 Plug 'preservim/nerdtree', { 'on': 'NERDTreeToggle' }
 
+" CSharp
+Plug 'OmniSharp/omnisharp-vim'
+Plug 'ctrlpvim/ctrlp.vim'
+
+" File navigation
+Plug 'ibhagwan/fzf-lua'
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+Plug 'kevinhwang91/rnvimr'
+Plug 'airblade/vim-rooter'
+" Plug 'pechorin/any-jump.vim'
 call plug#end()
 
 " ============================== vim-airline ==================================
@@ -297,18 +308,18 @@ let g:NERDToggleCheckAllLines = 1
 
 
 " ==================== nvim-treesitter ====================
-" if g:nvim_plugins_installation_completed == 1
-" lua <<EOF
-" require'nvim-treesitter.configs'.setup {
-"   -- one of "all", "language", or a list of languages
-"   ensure_installed = {"typescript", "html", "java", "c", "json", "bash", "vim", "tsx"},
-"   highlight = {
-"     enable = true,              -- false will disable the whole extension
-"     disable = { "rust" },  -- list of language that will be disabled
-"   },
-" }
-" EOF
-" endif
+if g:nvim_plugins_installation_completed == 1
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+	-- one of "all", "language", or a list of languages
+	ensure_installed = {"typescript", "html", "java", "c", "json", "bash", "vim", "tsx", "javascript"},
+	highlight = {
+		enable = true,              -- false will disable the whole extension
+		disable = { "rust" },  -- list of language that will be disabled
+	},
+}
+EOF
+endif
 
 " ==================== wildfire ====================
 map <c-b> <Plug>(wildfire-quick-select)
@@ -319,8 +330,8 @@ let g:wildfire_objects = {
 
 
 " ==================== nvim-spectre ====================
-" nnoremap <LEADER>f <cmd>lua require('spectre').open()<CR>
-" vnoremap <LEADER>f <cmd>lua require('spectre').open_visual()<CR>
+nnoremap <LEADER>f <cmd>lua require('spectre').open()<CR>
+vnoremap <LEADER>f <cmd>lua require('spectre').open_visual()<CR>
 
 
 "==================== NerdTree ====================
@@ -336,6 +347,142 @@ autocmd BufEnter * if bufname('#') =~ 'NERD_tree_\d\+' && bufname('%') !~ 'NERD_
 
 nnoremap <C-t> :NERDTreeToggle<CR>
 
+" ==================== CTRLP (Dependency for omnisharp) ====================
+let g:ctrlp_map = ''
+let g:ctrlp_cmd = 'CtrlP'
+
+" ==================== OmniSharp ====================
+let g:OmniSharp_typeLookupInPreview = 1
+let g:omnicomplete_fetch_full_documentation = 1
+let g:OmniSharp_server_use_mono = 1
+let g:OmniSharp_server_stdio = 1
+let g:OmniSharp_highlight_types = 2
+let g:OmniSharp_selector_ui = 'ctrlp'
+autocmd Filetype cs nnoremap <buffer> gd :OmniSharpPreviewDefinition<CR>
+autocmd Filetype cs nnoremap <buffer> gr :OmniSharpFindUsages<CR>
+autocmd Filetype cs nnoremap <buffer> gy :OmniSharpTypeLookup<CR>
+autocmd Filetype cs nnoremap <buffer> ga :OmniSharpGetCodeActions<CR>
+autocmd Filetype cs nnoremap <buffer> <LEADER>rn :OmniSharpRename<CR><C-N>:res +5<CR>
+sign define OmniSharpCodeActions text=💡
+let g:coc_sources_disable_map = { 'cs': ['cs', 'cs-1', 'cs-2', 'cs-3'] }
+
+" ==================== fzf-lua ====================
+noremap <silent> <C-p> :FzfLua files<CR>
+noremap <silent> <C-f> :Rg<CR>
+noremap <silent> <C-h> :FzfLua oldfiles cwd=~<CR>
+noremap <silent> <C-q> :FzfLua builtin<CR>
+noremap <silent> <C-t> :FzfLua lines<CR>
+" noremap <silent> <C-x> :FzfLua resume<CR>
+noremap <silent> z= :FzfLua spell_suggest<CR>
+noremap <silent> <C-w> :FzfLua buffers<CR>
+noremap <leader>; :History:<CR>
+augroup fzf_commands
+	autocmd!
+	autocmd FileType fzf tnoremap <silent> <buffer> <c-j> <down>
+	autocmd FileType fzf tnoremap <silent> <buffer> <c-k> <up>
+augroup end
+if g:nvim_plugins_installation_completed == 1
+lua <<EOF
+require'fzf-lua'.setup {
+	global_resume = true,
+	global_resume_query = true,
+	winopts = {
+		height = 0.95,
+		width = 0.95,
+		preview = {
+			scrollbar = 'float',
+		},
+		fullscreen = false,
+		vertical       = 'down:45%',      -- up|down:size
+		horizontal     = 'right:60%',     -- right|left:size
+		hidden         = 'nohidden',
+		title = true,
+	},
+	keymap = {
+		-- These override the default tables completely
+		-- no need to set to `false` to disable a bind
+		-- delete or modify is sufficient
+		builtin = {
+			["<c-f>"]      = "toggle-fullscreen",
+			["<c-r>"]      = "toggle-preview-wrap",
+			["<c-p>"]      = "toggle-preview",
+			["<c-y>"]      = "preview-page-down",
+			["<c-l>"]      = "preview-page-up",
+			["<S-left>"]   = "preview-page-reset",
+		},
+		fzf = {
+			["esc"]        = "abort",
+			["ctrl-h"]     = "unix-line-discard",
+			["ctrl-k"]     = "half-page-down",
+			["ctrl-b"]     = "half-page-up",
+			["ctrl-n"]     = "beginning-of-line",
+			["ctrl-a"]     = "end-of-line",
+			["alt-a"]      = "toggle-all",
+			["f3"]         = "toggle-preview-wrap",
+			["f4"]         = "toggle-preview",
+			["shift-down"] = "preview-page-down",
+			["shift-up"]   = "preview-page-up",
+			["ctrl-e"]     = "down",
+			["ctrl-u"]     = "up",
+		},
+	},
+	previewers = {
+		cat = {
+			cmd             = "cat",
+			args            = "--number",
+		},
+		bat = {
+			cmd             = "bat",
+			args            = "--style=numbers,changes --color always",
+			theme           = 'Coldark-Dark', -- bat preview theme (bat --list-themes)
+			config          = nil,            -- nil uses $BAT_CONFIG_PATH
+		},
+		head = {
+			cmd             = "head",
+			args            = nil,
+		},
+		git_diff = {
+			cmd_deleted     = "git diff --color HEAD --",
+			cmd_modified    = "git diff --color HEAD",
+			cmd_untracked   = "git diff --color --no-index /dev/null",
+			-- pager        = "delta",      -- if you have `delta` installed
+		},
+		man = {
+			cmd             = "man -c %s | col -bx",
+		},
+		builtin = {
+			syntax          = true,         -- preview syntax highlight?
+			syntax_limit_l  = 0,            -- syntax limit (lines), 0=nolimit
+			syntax_limit_b  = 1024*1024,    -- syntax limit (bytes), 0=nolimit
+		},
+	},
+	files = {
+		-- previewer      = "bat",          -- uncomment to override previewer
+																				-- (name from 'previewers' table)
+																				-- set to 'false' to disable
+		prompt            = 'Files❯ ',
+		multiprocess      = true,           -- run command in a separate process
+		git_icons         = true,           -- show git icons?
+		file_icons        = true,           -- show file icons?
+		color_icons       = true,           -- colorize file|git icons
+		-- executed command priority is 'cmd' (if exists)
+		-- otherwise auto-detect prioritizes `fd`:`rg`:`find`
+		-- default options are controlled by 'fd|rg|find|_opts'
+		-- NOTE: 'find -printf' requires GNU find
+		-- cmd            = "find . -type f -printf '%P\n'",
+		find_opts         = [[-type f -not -path '*/\.git/*' -printf '%P\n']],
+		rg_opts           = "--color=never --files --hidden --follow -g '!.git'",
+		fd_opts           = "--color=never --type f --hidden --follow --exclude .git",
+	},
+	buffers = {
+		prompt            = 'Buffers❯ ',
+		file_icons        = true,         -- show file icons?
+		color_icons       = true,         -- colorize file|git icons
+		sort_lastused     = true,         -- sort buffers() by last used
+	},
+}
+EOF
+endif
 
 " ============================== catppuccin/nvim ==================================
 " catppuccin
